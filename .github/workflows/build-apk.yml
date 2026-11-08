@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -99,14 +100,14 @@ jobs:
       - name: Prepare APK release asset
         id: prep_asset
         run: |
-          ASSET_DIR="$RUNNER_TEMP/release_asset"
+          ASSET_DIR="${RUNNER_TEMP}/release_asset"
           mkdir -p "$ASSET_DIR"
           cp app/build/outputs/apk/debug/app-debug.apk "$ASSET_DIR/app-debug.apk"
           if [ ! -s "$ASSET_DIR/app-debug.apk" ]; then
             echo "ERROR: Prepared release asset is missing or empty!"
             exit 1
           fi
-          echo "asset_path=$ASSET_DIR/app-debug.apk" >> "$GITHUB_OUTPUT"
+          echo "asset_path=${ASSET_DIR}/app-debug.apk" >> "$GITHUB_OUTPUT"
 
       - name: Publish APK to GitHub Releases
         id: create_release
@@ -128,18 +129,15 @@ jobs:
 
           RELEASE_TAG="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
           RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
-          RELEASE_NOTES=$(cat << 'EOF'
-          ### Automated Debug APK Build
+          RELEASE_NOTES="### Automated Debug APK Build
 
-          - **Artifact**: `app-debug.apk`
-          - **Build System**: GitHub Actions
-          - **Run Number**: ${{ github.run_number }}
-          - **Run Attempt**: ${{ github.run_attempt }}
-          - **Commit**: ${{ github.sha }}
+- **Artifact**: app-debug.apk
+- **Build System**: GitHub Actions
+- **Run Number**: ${{ github.run_number }}
+- **Run Attempt**: ${{ github.run_attempt }}
+- **Commit**: ${{ github.sha }}
 
-          > **Note**: This is an automatically generated debug APK intended for testing purposes only. It is not a Play Store production release and is signed only with a temporary debug keystore.
-          EOF
-          )
+> **Note**: This is an automatically generated debug APK intended for testing purposes only. It is not a Play Store production release and is signed only with a temporary debug keystore."
 
           echo "Creating release $RELEASE_TAG for commit ${{ github.sha }}..."
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
