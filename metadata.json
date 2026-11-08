@@ -1,0 +1,6 @@
+{
+  "name": "Level Up",
+  "description": "Solo Leveling-inspired real-life RPG progression and productivity system for academic, GATE, fitness, and habit mastery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
