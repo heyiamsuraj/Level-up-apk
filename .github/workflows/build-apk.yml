@@ -129,21 +129,23 @@ jobs:
 
           RELEASE_TAG="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
           RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
-          RELEASE_NOTES="### Automated Debug APK Build
+          NOTES_FILE="${RUNNER_TEMP}/release_notes.md"
 
-- **Artifact**: app-debug.apk
-- **Build System**: GitHub Actions
-- **Run Number**: ${{ github.run_number }}
-- **Run Attempt**: ${{ github.run_attempt }}
-- **Commit**: ${{ github.sha }}
-
-> **Note**: This is an automatically generated debug APK intended for testing purposes only. It is not a Play Store production release and is signed only with a temporary debug keystore."
+          echo "### Automated Debug APK Build" > "$NOTES_FILE"
+          echo "" >> "$NOTES_FILE"
+          echo "- **Artifact**: app-debug.apk" >> "$NOTES_FILE"
+          echo "- **Build System**: GitHub Actions" >> "$NOTES_FILE"
+          echo "- **Run Number**: ${{ github.run_number }}" >> "$NOTES_FILE"
+          echo "- **Run Attempt**: ${{ github.run_attempt }}" >> "$NOTES_FILE"
+          echo "- **Commit**: ${{ github.sha }}" >> "$NOTES_FILE"
+          echo "" >> "$NOTES_FILE"
+          echo "> **Note**: This is an automatically generated debug APK intended for testing purposes only. It is not a Play Store production release and is signed only with a temporary debug keystore." >> "$NOTES_FILE"
 
           echo "Creating release $RELEASE_TAG for commit ${{ github.sha }}..."
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
             --title "$RELEASE_TITLE" \
             --target "${{ github.sha }}" \
-            --notes "$RELEASE_NOTES" \
+            --notes-file "$NOTES_FILE" \
             --latest
 
       - name: Report APK download result
@@ -162,13 +164,11 @@ jobs:
             echo "APK Filename: app-debug.apk"
             echo "Direct APK URL: $DIRECT_URL"
 
-            {
-              echo "## DIRECT APK DOWNLOAD"
-              echo ""
-              echo "[$DIRECT_URL]($DIRECT_URL)"
-              echo ""
-              echo "> Backup artifact \`app-debug-apk\` is also stored in GitHub Actions."
-            } >> "$GITHUB_STEP_SUMMARY"
+            echo "## DIRECT APK DOWNLOAD" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "[$DIRECT_URL]($DIRECT_URL)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "> Backup artifact \`app-debug-apk\` is also stored in GitHub Actions." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "=== WARNING: RELEASE PUBLISHING FAILED ==="
             if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
@@ -176,9 +176,7 @@ jobs:
             else
               echo "APK build did not produce an artifact."
             fi
-            {
-              echo "## APK Build & Release Summary"
-              echo ""
-              echo "Release publishing encountered an error, but the backup artifact \`app-debug-apk\` remains available in GitHub Actions."
-            } >> "$GITHUB_STEP_SUMMARY"
+            echo "## APK Build & Release Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release publishing encountered an error, but the backup artifact \`app-debug-apk\` remains available in GitHub Actions." >> "$GITHUB_STEP_SUMMARY"
           fi
