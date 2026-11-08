@@ -44,29 +44,33 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
-      - name: Accept Android SDK licenses and install platform
+      - name: Configure Android SDK and licenses
         run: |
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           echo "Using Android SDK at: $SDK_DIR"
-          if [ -d "$SDK_DIR" ]; then
-            echo "sdk.dir=$SDK_DIR" > local.properties
-            mkdir -p "$SDK_DIR/licenses"
-            printf "\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63cbd8224e7a14e4f73ac483785b8a94\n" > "$SDK_DIR/licenses/android-sdk-license"
-            printf "\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
-            if [ -x "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]; then
-              yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-              "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" || true
-              if [ -d "$SDK_DIR/platforms/android-36" ] && [ ! -d "$SDK_DIR/platforms/android-36.1" ]; then
-                cp -r "$SDK_DIR/platforms/android-36" "$SDK_DIR/platforms/android-36.1"
-                sed -i 's/AndroidVersion.ApiLevel=36/AndroidVersion.ApiLevel=36.1/g' "$SDK_DIR/platforms/android-36.1/source.properties" || true
-              fi
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          touch .env
+
+          mkdir -p "$SDK_DIR/licenses"
+          printf "24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > "$SDK_DIR/licenses/android-sdk-license"
+          printf "84831b9409646a918e30573bab4c9c91346d8abd\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
+          printf "601085b94cd77f0b54ff86406957099ebe79c4d6\n" > "$SDK_DIR/licenses/android-googletv-license"
+          printf "ceff83576aac4f7f37cb98fe189e9fb3c49d3b81\n" > "$SDK_DIR/licenses/android-googlexr-license"
+          printf "859f317696f67ef3d7f30a50a5560e7834b43903\n" > "$SDK_DIR/licenses/android-sdk-arm-dbt-license"
+          printf "33b6a2b64607f11b759f320ef9dff4ae5c47d97a\n" > "$SDK_DIR/licenses/google-gdk-license"
+          printf "3a7848b1d7366ca5cfa0be477627644ca73f47e3\n" > "$SDK_DIR/licenses/microxr-sysimage-license"
+          printf "e9acab5b5fbb560a72cfaecce8946896ff6aab9d\n" > "$SDK_DIR/licenses/mips-android-sysimage-license"
+
+          if [ -x "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+            "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
+            if [ -d "$SDK_DIR/platforms/android-36" ] && [ ! -d "$SDK_DIR/platforms/android-36.1" ]; then
+              cp -r "$SDK_DIR/platforms/android-36" "$SDK_DIR/platforms/android-36.1"
+              sed -i 's/AndroidVersion.ApiLevel=36/AndroidVersion.ApiLevel=36.1/g' "$SDK_DIR/platforms/android-36.1/source.properties" || true
             fi
           fi
-          touch .env
-          sed -i 's/compileSdk { version = release(36) { minorApiLevel = 1 } }/compileSdk = 36/g' app/build.gradle.kts || true
-          sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties || true
-          mkdir -p ~/.gradle
-          echo "org.gradle.configuration-cache=false" >> ~/.gradle/gradle.properties
+
+          echo "android.builder.sdkDownload=true" >> gradle.properties
 
       - name: Create temporary debug keystore
         run: |
@@ -91,9 +95,7 @@ jobs:
           echo "debug.keystore is present."
 
       - name: Build debug APK
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.configuration-cache=false"
-        run: gradle :app:assembleDebug --stacktrace --no-daemon
+        run: gradle :app:assembleDebug --stacktrace --no-daemon --configure-on-demand
 
       - name: Verify debug APK
         run: |
