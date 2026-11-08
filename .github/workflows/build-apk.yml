@@ -44,6 +44,22 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
+      - name: Accept Android SDK licenses and install platform
+        run: |
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "Using Android SDK at: $SDK_DIR"
+          if [ -d "$SDK_DIR" ]; then
+            echo "sdk.dir=$SDK_DIR" > local.properties
+            mkdir -p "$SDK_DIR/licenses"
+            printf "\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63cbd8224e7a14e4f73ac483785b8a94\n" > "$SDK_DIR/licenses/android-sdk-license"
+            printf "\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
+            if [ -x "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]; then
+              yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+              "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" || true
+            fi
+          fi
+          touch .env
+
       - name: Create temporary debug keystore
         run: |
           if [ -f "./debug.keystore" ]; then
